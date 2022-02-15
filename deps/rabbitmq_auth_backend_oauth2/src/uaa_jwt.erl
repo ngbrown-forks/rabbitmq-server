@@ -42,22 +42,26 @@ remove_signing_key(KeyId) ->
 
 -spec update_uaa_jwt_signing_keys(map()) -> ok.
 update_uaa_jwt_signing_keys(SigningKeys) ->
+    rabbit_log:debug("update_uaa_jwt_signing_keys()", []),
     UaaEnv0 = application:get_env(?APP, key_config, []),
     update_uaa_jwt_signing_keys(UaaEnv0, SigningKeys).
 
 -spec update_uaa_jwt_signing_keys([term()], map()) -> ok.
 update_uaa_jwt_signing_keys(UaaEnv0, SigningKeys) ->
+    rabbit_log:debug("update_uaa_jwt_signing_keys()", []),
     UaaEnv1 = proplists:delete(signing_keys, UaaEnv0),
     UaaEnv2 = [{signing_keys, SigningKeys} | UaaEnv1],
     application:set_env(?APP, key_config, UaaEnv2).
 
 -spec update_jwks_signing_keys() -> ok | {error, term()}.
 update_jwks_signing_keys() ->
+    rabbit_log:debug("update_jwks_signing_keys()", []),
     UaaEnv = application:get_env(?APP, key_config, []),
     case proplists:get_value(jwks_url, UaaEnv) of
         undefined ->
             {error, no_jwks_url};
         JwksUrl ->
+            rabbit_log:debug("Fetching JWKS signing keys", []),
             case uaa_jwks:get(JwksUrl) of
                 {ok, {_, _, JwksBody}} ->
                     KeyList = maps:get(<<"keys">>, jose:decode(erlang:iolist_to_binary(JwksBody)), []),
@@ -70,6 +74,7 @@ update_jwks_signing_keys() ->
 
 -spec decode_and_verify(binary()) -> {boolean(), map()} | {error, term()}.
 decode_and_verify(Token) ->
+    rabbit_log:debug("decode_and_verify()", []),
     case uaa_jwt_jwt:get_key_id(Token) of
         {ok, KeyId} ->
             case get_jwk(KeyId) of
@@ -84,6 +89,7 @@ decode_and_verify(Token) ->
 
 -spec get_jwk(binary()) -> {ok, map()} | {error, term()}.
 get_jwk(KeyId) ->
+    rabbit_log:debug("get_jwk('~s')", [KeyId]),
     get_jwk(KeyId, true).
 
 get_jwk(KeyId, AllowUpdateJwks) ->
@@ -114,6 +120,7 @@ get_jwk(KeyId, AllowUpdateJwks) ->
     end.
 
 verify_signing_key(Type, Value) ->
+    rabbit_log:debug("verify_signing_key()", []),
     Verified = case Type of
         json     -> uaa_jwt_jwk:make_jwk(Value);
         pem      -> uaa_jwt_jwk:from_pem(Value);

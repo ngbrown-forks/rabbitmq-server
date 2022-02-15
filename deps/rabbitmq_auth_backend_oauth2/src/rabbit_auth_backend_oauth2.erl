@@ -109,7 +109,9 @@ authenticate(Username0, AuthProps0) ->
         {refused, Err} ->
           {refused, "Authentication using an OAuth 2/JWT token failed: ~p", [Err]};
         {ok, DecodedToken} ->
+            rabbit_log:debug("Token check passed", []),
             Func = fun() ->
+                        rabbit_log:debug("Token decoded", []),
                         Username = username_from(Username0, DecodedToken),
                         Tags     = tags_from(DecodedToken),
 

@@ -150,7 +150,7 @@ test_post_process_token_payload_keycloak(_) ->
 
 post_process_payload_with_keycloak_authorization(Authorization) ->
     Jwk = ?UTIL_MOD:fixture_jwk(),
-    Token = maps:put(<<"authorization">>, Authorization, ?UTIL_MOD:fixture_token_with_scopes([])),
+    Token = maps:put(<<"authorization">>, Authorization, ?UTIL_MOD:fixture_token_with_scopes(<<"">>)),
     {_, EncodedToken} = ?UTIL_MOD:sign_token_hs(Token, Jwk),
     {true, Payload} = uaa_jwt_jwt:decode_and_verify(Jwk, EncodedToken),
     rabbit_auth_backend_oauth2:post_process_payload(Payload).
@@ -222,7 +222,7 @@ test_post_process_token_payload_complex_claims(_) ->
 
 post_process_payload_with_complex_claim_authorization(Authorization) ->
     Jwk = ?UTIL_MOD:fixture_jwk(),
-    Token =  maps:put(<<"additional_rabbitmq_scopes">>, Authorization, ?UTIL_MOD:fixture_token_with_scopes([])),
+    Token =  maps:put(<<"additional_rabbitmq_scopes">>, Authorization, ?UTIL_MOD:fixture_token_with_scopes(<<"">>)),
     {_, EncodedToken} = ?UTIL_MOD:sign_token_hs(Token, Jwk),
     {true, Payload} = uaa_jwt_jwt:decode_and_verify(Jwk, EncodedToken),
     rabbit_auth_backend_oauth2:post_process_payload(Payload).
@@ -281,8 +281,7 @@ test_successful_access_with_a_token_that_has_tag_scopes(_) ->
     application:set_env(rabbitmq_auth_backend_oauth2, key_config, UaaEnv),
     application:set_env(rabbitmq_auth_backend_oauth2, resource_server_id, <<"rabbitmq">>),
     Username = <<"username">>,
-    Token    = ?UTIL_MOD:sign_token_hs(?UTIL_MOD:fixture_token([<<"rabbitmq.tag:management">>,
-                                                                <<"rabbitmq.tag:policymaker">>]), Jwk),
+    Token    = ?UTIL_MOD:sign_token_hs(?UTIL_MOD:fixture_token(<<" tag%3Amanagement tag%3Apolicymaker">>), Jwk),
 
     {ok, #auth_user{username = Username, tags = [management, policymaker]}} =
         rabbit_auth_backend_oauth2:user_login_authentication(Username, [{password, Token}]).

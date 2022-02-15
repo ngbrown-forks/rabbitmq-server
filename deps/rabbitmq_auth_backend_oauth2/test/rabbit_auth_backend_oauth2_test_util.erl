@@ -8,6 +8,8 @@
 
 -compile(export_all).
 
+-import(unicode, [characters_to_binary/1]).
+
 -define(DEFAULT_EXPIRATION_IN_SECONDS, 2).
 
 %%
@@ -48,9 +50,7 @@ fixture_jwk() ->
       <<"value">> => <<"tokenkey">>}.
 
 full_permission_scopes() ->
-    [<<"rabbitmq.configure:*/*">>,
-     <<"rabbitmq.write:*/*">>,
-     <<"rabbitmq.read:*/*">>].
+    <<"configure%3A%2A%2F%2A write%3A%2A%2F%2A read%3A%2A%2F%2A">>.
 
 expirable_token() ->
     expirable_token(?DEFAULT_EXPIRATION_IN_SECONDS).
@@ -85,14 +85,10 @@ token_with_scopes_and_expiration(Scopes, Expiration) ->
       <<"scope">> => Scopes}.
 
 fixture_token() ->
-    fixture_token([]).
+    fixture_token(<<"">>).
 
 fixture_token(ExtraScopes) ->
-    Scopes = [<<"rabbitmq.configure:vhost/foo">>,
-              <<"rabbitmq.write:vhost/foo">>,
-              <<"rabbitmq.read:vhost/foo">>,
-              <<"rabbitmq.read:vhost/bar">>,
-              <<"rabbitmq.read:vhost/bar/%23%2Ffoo">>] ++ ExtraScopes,
+    Scopes = characters_to_binary([<<"configure%3Avhost%2Ffoo write%3Avhost%2Ffoo read%3Avhost%2Ffoo read%3Avhost%2Fbar read%3Avhost%2Fbar%2F%23%2Ffoo">>, ExtraScopes]),
     fixture_token_with_scopes(Scopes).
 
 fixture_token_with_full_permissions() ->

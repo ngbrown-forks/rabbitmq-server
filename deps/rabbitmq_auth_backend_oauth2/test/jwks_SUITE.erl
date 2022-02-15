@@ -235,7 +235,7 @@ generate_valid_token_with_extra_fields(Config, ExtraFields) ->
               undefined -> ?UTIL_MOD:fixture_jwk();
               Value     -> Value
           end,
-    Token = maps:merge(?UTIL_MOD:fixture_token_with_scopes([]), ExtraFields),
+    Token = maps:merge(?UTIL_MOD:fixture_token_with_scopes(<<"">>), ExtraFields),
     ?UTIL_MOD:sign_token_hs(Token, Jwk).
 
 generate_expired_token(Config) ->
