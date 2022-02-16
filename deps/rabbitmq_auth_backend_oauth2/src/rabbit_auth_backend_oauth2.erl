@@ -158,6 +158,8 @@ check_token(Token) ->
         {true, Payload} -> 
             ProcessedPayload = post_process_payload(Payload),
             rabbit_log:debug("check_token(,), ProcessedPayload = ~p", [ProcessedPayload]),
+            % next call requires "scope" and "aud"
+            % AAD doesn't provide "scope"
             validate_payload(ProcessedPayload);
         {false, _}      -> {refused, signature_invalid}
     end.
