@@ -30,6 +30,7 @@
 -define(APP, rabbitmq_auth_backend_oauth2).
 -define(RESOURCE_SERVER_ID, resource_server_id).
 %% a term used by the IdentityServer community
+%% maps to additional_scopes_key
 -define(COMPLEX_CLAIM, extra_scopes_source).
 
 description() ->
@@ -39,6 +40,7 @@ description() ->
 %%--------------------------------------------------------------------
 
 user_login_authentication(Username, AuthProps) ->
+    rabbit_log:debug("user_login_authentication('~s',)", [Username]),
     case authenticate(Username, AuthProps) of
 	{refused, Msg, Args} = AuthResult ->
 	    rabbit_log:debug(Msg, Args),
@@ -48,6 +50,7 @@ user_login_authentication(Username, AuthProps) ->
     end.
 
 user_login_authorization(Username, AuthProps) ->
+    rabbit_log:debug("user_login_authorization('~s',)", [Username]),
     case authenticate(Username, AuthProps) of
         {ok, #auth_user{impl = Impl}} -> {ok, Impl};
         Else                          -> Else
@@ -55,6 +58,7 @@ user_login_authorization(Username, AuthProps) ->
 
 check_vhost_access(#auth_user{impl = DecodedToken},
                    VHost, _AuthzData) ->
+    rabbit_log:debug("check_vhost_access(,,)", []),
     with_decoded_token(DecodedToken,
         fun() ->
             Scopes      = get_scopes(DecodedToken),
@@ -65,6 +69,7 @@ check_vhost_access(#auth_user{impl = DecodedToken},
 
 check_resource_access(#auth_user{impl = DecodedToken},
                       Resource, Permission, _AuthzContext) ->
+    rabbit_log:debug("check_resource_access(,,)", []),
     with_decoded_token(DecodedToken,
         fun() ->
             Scopes = get_scopes(DecodedToken),
@@ -73,6 +78,7 @@ check_resource_access(#auth_user{impl = DecodedToken},
 
 check_topic_access(#auth_user{impl = DecodedToken},
                    Resource, Permission, Context) ->
+    rabbit_log:debug("check_topic_access(,,)", []),
     with_decoded_token(DecodedToken,
         fun() ->
             Scopes = get_scopes(DecodedToken),
@@ -99,6 +105,7 @@ update_state(AuthUser, NewToken) ->
 %%--------------------------------------------------------------------
 
 authenticate(Username0, AuthProps0) ->
+    rabbit_log:debug("authenticate(~s,)", [Username0]),
     AuthProps = to_map(AuthProps0),
     Token     = token_from_context(AuthProps),
     case check_token(Token) of
@@ -145,13 +152,18 @@ validate_token_expiry(#{}) -> ok.
 
 -spec check_token(binary()) -> {ok, map()} | {error, term()}.
 check_token(Token) ->
+    rabbit_log:debug("check_token(,)", []),
     case uaa_jwt:decode_and_verify(Token) of
         {error, Reason} -> {refused, {error, Reason}};
-        {true, Payload} -> validate_payload(post_process_payload(Payload));
+        {true, Payload} -> 
+            ProcessedPayload = post_process_payload(Payload),
+            rabbit_log:debug("check_token(,), ProcessedPayload = ~p", [ProcessedPayload]),
+            validate_payload(ProcessedPayload);
         {false, _}      -> {refused, signature_invalid}
     end.
 
 post_process_payload(Payload) when is_map(Payload) ->
+    rabbit_log:debug("post_process_payload()", []),
     Payload0 = maps:map(fun(K, V) ->
                         case K of
                             <<"aud">>   when is_binary(V) -> binary:split(V, <<" ">>, [global, trim_all]);
@@ -171,14 +183,21 @@ post_process_payload(Payload) when is_map(Payload) ->
         false -> Payload1
         end,
 
+    rabbit_log:debug("post_process_payload() done", []),
     Payload2.
 
 does_include_complex_claim_field(Payload) when is_map(Payload) ->
-        maps:is_key(application:get_env(?APP, ?COMPLEX_CLAIM, undefined), Payload).
+        rabbit_log:debug("does_include_complex_claim_field()", []),
+        ComplexClaimEnv = application:get_env(?APP, ?COMPLEX_CLAIM, undefined),
+        rabbit_log:debug("does_include_complex_claim_field() env_complex_claim = ~p", [ComplexClaimEnv]),
+        maps:is_key(ComplexClaimEnv, Payload).
 
 post_process_payload_complex_claim(Payload) ->
-    ComplexClaim = maps:get(application:get_env(?APP, ?COMPLEX_CLAIM, undefined), Payload),
-    ResourceServerId = rabbit_data_coercion:to_binary(application:get_env(?APP, ?RESOURCE_SERVER_ID, <<>>)),
+    rabbit_log:debug("post_process_payload_complex_claim()", []),
+    ComplexClaimEnv = application:get_env(?APP, ?COMPLEX_CLAIM, undefined),
+    ComplexClaim = maps:get(ComplexClaimEnv, Payload),
+    ResourceServerIdEnv = application:get_env(?APP, ?RESOURCE_SERVER_ID, <<>>),
+    ResourceServerId = rabbit_data_coercion:to_binary(ResourceServerIdEnv),
 
     AdditionalScopes =
         case ComplexClaim of
@@ -207,6 +226,7 @@ post_process_payload_complex_claim(Payload) ->
 
 %% keycloak token format: https://github.com/rabbitmq/rabbitmq-auth-backend-oauth2/issues/36
 post_process_payload_keycloak(#{<<"authorization">> := Authorization} = Payload) ->
+    rabbit_log:debug("post_process_payload_keycloak()", []),
     AdditionalScopes = case maps:get(<<"permissions">>, Authorization, undefined) of
         undefined   -> [];
         Permissions -> extract_scopes_from_keycloak_permissions([], Permissions)
@@ -217,6 +237,7 @@ post_process_payload_keycloak(#{<<"authorization">> := Authorization} = Payload)
 extract_scopes_from_keycloak_permissions(Acc, []) ->
     Acc;
 extract_scopes_from_keycloak_permissions(Acc, [H | T]) when is_map(H) ->
+    rabbit_log:debug("extract_scopes_from_keycloak_permissions()", []),
     Scopes = case maps:get(<<"scopes">>, H, []) of
         ScopesAsList when is_list(ScopesAsList) ->
             ScopesAsList;
@@ -228,11 +249,14 @@ extract_scopes_from_keycloak_permissions(Acc, [_ | T]) ->
     extract_scopes_from_keycloak_permissions(Acc, T).
 
 validate_payload(#{<<"scope">> := _Scope, <<"aud">> := _Aud} = DecodedToken) ->
+    %rabbit_log:debug("validate_payload()", []),
+    rabbit_log:debug("validate_payload(scope='~p', aud='~p')", [_Scope, _Aud]),
     ResourceServerEnv = application:get_env(?APP, ?RESOURCE_SERVER_ID, <<>>),
     ResourceServerId = rabbit_data_coercion:to_binary(ResourceServerEnv),
     validate_payload(DecodedToken, ResourceServerId).
 
 validate_payload(#{<<"scope">> := Scope, <<"aud">> := Aud} = DecodedToken, ResourceServerId) ->
+    rabbit_log:debug("validate_payload({scope='~p', aud='~p'}, '~p')", [Scope, Aud, ResourceServerId]),
     case check_aud(Aud, ResourceServerId) of
         ok           -> {ok, DecodedToken#{<<"scope">> => filter_scopes(Scope, ResourceServerId)}};
         {error, Err} -> {refused, {invalid_aud, Err}}
@@ -240,11 +264,13 @@ validate_payload(#{<<"scope">> := Scope, <<"aud">> := Aud} = DecodedToken, Resou
 
 filter_scopes(Scopes, <<"">>) -> Scopes;
 filter_scopes(Scopes, ResourceServerId)  ->
+    rabbit_log:debug("filter_scopes('~p', '~s')", [Scopes, ResourceServerId]),
     PrefixPattern = <<ResourceServerId/binary, ".">>,
     matching_scopes_without_prefix(Scopes, PrefixPattern).
 
 check_aud(_, <<>>)    -> ok;
 check_aud(Aud, ResourceServerId) ->
+    rabbit_log:debug("check_aud('~p', '~s')", [Aud, ResourceServerId]),
     case Aud of
         List when is_list(List) ->
             case lists:member(ResourceServerId, Aud) of
@@ -305,6 +331,7 @@ tags_from(DecodedToken) ->
     lists:usort(lists:map(fun rabbit_data_coercion:to_atom/1, TagScopes)).
 
 matching_scopes_without_prefix(Scopes, PrefixPattern) ->
+    rabbit_log:debug("matching_scopes_without_prefix('~p', '~p')", [Scopes, PrefixPattern]),
     PatternLength = byte_size(PrefixPattern),
     lists:filtermap(
         fun(ScopeEl) ->

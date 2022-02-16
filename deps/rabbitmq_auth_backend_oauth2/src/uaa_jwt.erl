@@ -48,7 +48,7 @@ update_uaa_jwt_signing_keys(SigningKeys) ->
 
 -spec update_uaa_jwt_signing_keys([term()], map()) -> ok.
 update_uaa_jwt_signing_keys(UaaEnv0, SigningKeys) ->
-    rabbit_log:debug("update_uaa_jwt_signing_keys()", []),
+    rabbit_log:debug("update_uaa_jwt_signing_keys(,)", []),
     UaaEnv1 = proplists:delete(signing_keys, UaaEnv0),
     UaaEnv2 = [{signing_keys, SigningKeys} | UaaEnv1],
     application:set_env(?APP, key_config, UaaEnv2).
@@ -93,6 +93,7 @@ get_jwk(KeyId) ->
     get_jwk(KeyId, true).
 
 get_jwk(KeyId, AllowUpdateJwks) ->
+    rabbit_log:debug("get_jwk('~s',)", [KeyId]),
     Keys = signing_keys(),
     case maps:get(KeyId, Keys, undefined) of
         undefined ->
@@ -100,16 +101,21 @@ get_jwk(KeyId, AllowUpdateJwks) ->
                 AllowUpdateJwks ->
                     case update_jwks_signing_keys() of
                         ok ->
+                            rabbit_log:debug("Updated JWKS signing keys", []),
                             get_jwk(KeyId, false);
                         {error, no_jwks_url} ->
+                            rabbit_log:debug("Failed updating JWKS signing keys", []),
                             {error, key_not_found};
                         {error, _} = Err ->
+                            rabbit_log:debug("Error updating JWKS signing keys", []),
                             Err
                     end;
                 true            ->
+                    rabbit_log:debug("key not found '~s'", [KeyId]),
                     {error, key_not_found}
             end;
         {Type, Value} ->
+            rabbit_log:debug("key found '~s' of type '~s'", [KeyId, Type]),
             case Type of
                 json     -> uaa_jwt_jwk:make_jwk(Value);
                 pem      -> uaa_jwt_jwk:from_pem(Value);

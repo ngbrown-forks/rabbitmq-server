@@ -24,6 +24,7 @@ decode(Token) ->
     end.
 
 decode_and_verify(Jwk, Token) ->
+    rabbit_log:debug("decode_and_verify(,)", []),
     UaaEnv = application:get_env(rabbitmq_auth_backend_oauth2, key_config, []),
     Verify =
         case proplists:get_value(algorithms, UaaEnv) of
