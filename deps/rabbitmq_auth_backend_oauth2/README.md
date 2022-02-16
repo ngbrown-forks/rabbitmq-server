@@ -43,7 +43,7 @@ To use this plugin
 ### Authorization Flow
 
 1. Client authorize with OAuth 2.0 provider, requesting an `access_token` (using any grant type desired)
-2. Token scope returned by OAuth 2.0 provider must include RabbitMQ resource scopes that follow a convention used by this plugin: `configure:%2F/foo` means "configure permissions for 'foo' in vhost '/'") (`scope` field can be changed using `extra_scopes_source` in **advanced.config** file.
+2. Token scope returned by OAuth 2.0 provider must include RabbitMQ resource scopes that follow a convention used by this plugin: `configure:%2F/foo` means "configure permissions for 'foo' in vhost '/'") (`scope` field can be changed using `additional_rabbitmq_scopes` in **advanced.config** file.
 3. Client passes the token as password when connecting to a RabbitMQ node. **The username field is ignored**.
 4. The translated permissions are stored as part of the authenticated connection state and used the same
    way permissions from RabbitMQ's internal database would be used.
@@ -232,14 +232,14 @@ be `my_rabbit.read:*/*`.
 
 ### Using a different token field for the Scope
 
-By default the plugin will look for the `scope` key in the token, you can configure the plugin to also look in other fields using the `extra_scopes_source` setting. Values format accepted are scope as **string** or **list**
+By default the plugin will look for the `scope` key in the token, you can configure the plugin to also look in other fields using the `additional_rabbitmq_scopes` setting. Values format accepted are scope as **string** or **list**
 
 
 ```erlang
 [
   {rabbitmq_auth_backend_oauth2, [
     {resource_server_id, <<"my_rabbit_server">>},
-    {extra_scopes_source, <<"my_custom_scope_key">>},
+    {additional_rabbitmq_scopes, <<"my_custom_scope_key">>},
     ...
     ]}
   ]},

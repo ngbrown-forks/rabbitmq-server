@@ -30,7 +30,7 @@
 -define(APP, rabbitmq_auth_backend_oauth2).
 -define(RESOURCE_SERVER_ID, resource_server_id).
 %% a term used by the IdentityServer community
--define(COMPLEX_CLAIM, extra_scopes_source).
+-define(COMPLEX_CLAIM, additional_rabbitmq_scopes).
 
 description() ->
     [{name, <<"OAuth 2">>},

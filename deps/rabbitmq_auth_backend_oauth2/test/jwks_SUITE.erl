@@ -58,7 +58,7 @@ groups() ->
 
 -define(UTIL_MOD, rabbit_auth_backend_oauth2_test_util).
 -define(RESOURCE_SERVER_ID, <<"rabbitmq">>).
--define(EXTRA_SCOPES_SOURCE, <<"additional_rabbitmq_scopes">>).
+-define(COMPLEX_CLAIM, <<"additional_rabbitmq_scopes">>).
 
 init_per_suite(Config) ->
     rabbit_ct_helpers:log_environment(),
@@ -121,7 +121,7 @@ init_per_testcase(Testcase, Config) when Testcase =:= test_successful_connection
                                          Testcase =:= test_successful_connection_with_complex_claim_as_a_list orelse
                                          Testcase =:= test_successful_connection_with_complex_claim_as_a_binary ->
   ok = rabbit_ct_broker_helpers:rpc(Config, 0, application, set_env,
-        [rabbitmq_auth_backend_oauth2, extra_scopes_source, ?EXTRA_SCOPES_SOURCE]),
+        [rabbitmq_auth_backend_oauth2, additional_rabbitmq_scopes, ?COMPLEX_CLAIM]),
   rabbit_ct_helpers:testcase_started(Config, Testcase),
   Config;
 
@@ -158,7 +158,7 @@ end_per_testcase(Testcase, Config) when Testcase =:= test_successful_connection_
                                         Testcase =:= test_successful_connection_with_complex_claim_as_a_binary ->
   rabbit_ct_broker_helpers:delete_vhost(Config, <<"vhost1">>),
   ok = rabbit_ct_broker_helpers:rpc(Config, 0, application, set_env,
-    [rabbitmq_auth_backend_oauth2, extra_scopes_source, undefined]),
+    [rabbitmq_auth_backend_oauth2, additional_rabbitmq_scopes, undefined]),
   rabbit_ct_helpers:testcase_started(Config, Testcase),
   Config;
 
