@@ -31,7 +31,7 @@
 -define(RESOURCE_SERVER_ID, resource_server_id).
 %% a term used by the IdentityServer community
 %% maps to additional_scopes_key
--define(COMPLEX_CLAIM, extra_scopes_source).
+-define(COMPLEX_CLAIM, additional_rabbitmq_scopes).
 
 description() ->
     [{name, <<"OAuth 2">>},
