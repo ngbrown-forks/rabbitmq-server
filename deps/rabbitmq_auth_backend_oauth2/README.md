@@ -144,7 +144,7 @@ NOTE: `jwks_url` takes precedence over `signing_keys` if both are provided.
 | Key                                      | Documentation     
 |------------------------------------------|-----------
 | `auth_oauth2.resource_server_id`         | [The Resource Server ID](#resource-server-id-and-scope-prefixes)
-| `auth_oauth2.additional_scopes_key`      | Configure the plugin to also look in other fields (maps to `additional_rabbitmq_scopes` in the old format).
+| `auth_oauth2.additional_scopes_key`      | Configure the plugin to also look in other fields (maps to `extra_scopes_source` in the old format).
 | `auth_oauth2.default_key`                | ID of the default signing key.
 | `auth_oauth2.signing_keys`               | Paths to signing key files.
 | `auth_oauth2.jwks_url`                   | The URL of key server. According to the [JWT Specification](https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.2) key server URL must be https.

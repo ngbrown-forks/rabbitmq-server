@@ -48,7 +48,7 @@ end_per_suite(Config) ->
     rabbit_ct_helpers:run_teardown_steps(Config).
 
 init_per_testcase(test_post_process_token_payload_complex_claims, Config) ->
-  application:set_env(rabbitmq_auth_backend_oauth2, extra_scopes_source, <<"additional_rabbitmq_scopes">>),
+  application:set_env(rabbitmq_auth_backend_oauth2, extra_scopes_source, <<"extra_scopes_source">>),
   application:set_env(rabbitmq_auth_backend_oauth2, resource_server_id, <<"rabbitmq">>),
   Config;
 
@@ -222,7 +222,7 @@ test_post_process_token_payload_complex_claims(_) ->
 
 post_process_payload_with_complex_claim_authorization(Authorization) ->
     Jwk = ?UTIL_MOD:fixture_jwk(),
-    Token =  maps:put(<<"additional_rabbitmq_scopes">>, Authorization, ?UTIL_MOD:fixture_token_with_scopes([])),
+    Token =  maps:put(<<"extra_scopes_source">>, Authorization, ?UTIL_MOD:fixture_token_with_scopes([])),
     {_, EncodedToken} = ?UTIL_MOD:sign_token_hs(Token, Jwk),
     {true, Payload} = uaa_jwt_jwt:decode_and_verify(Jwk, EncodedToken),
     rabbit_auth_backend_oauth2:post_process_payload(Payload).
