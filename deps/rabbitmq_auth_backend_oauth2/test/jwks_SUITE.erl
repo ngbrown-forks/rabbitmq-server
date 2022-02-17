@@ -58,7 +58,7 @@ groups() ->
 
 -define(UTIL_MOD, rabbit_auth_backend_oauth2_test_util).
 -define(RESOURCE_SERVER_ID, <<"rabbitmq">>).
--define(EXTRA_SCOPES_SOURCE, <<"additional_rabbitmq_scopes">>).
+-define(EXTRA_SCOPES_SOURCE, <<"extra_scopes_source">>).
 
 init_per_suite(Config) ->
     rabbit_ct_helpers:log_environment(),
@@ -300,7 +300,7 @@ test_successful_connection_with_simple_strings_for_aud_and_scope(Config) ->
 test_successful_connection_with_complex_claim_as_a_map(Config) ->
     {_Algo, Token} = generate_valid_token_with_extra_fields(
         Config,
-        #{<<"additional_rabbitmq_scopes">> => #{<<"rabbitmq">> => [<<"configure:*/*">>, <<"read:*/*">>, <<"write:*/*">>]}}
+        #{<<"extra_scopes_source">> => #{<<"rabbitmq">> => [<<"configure:*/*">>, <<"read:*/*">>, <<"write:*/*">>]}}
     ),
     Conn     = open_unmanaged_connection(Config, 0, <<"username">>, Token),
     {ok, Ch} = amqp_connection:open_channel(Conn),
@@ -311,7 +311,7 @@ test_successful_connection_with_complex_claim_as_a_map(Config) ->
 test_successful_connection_with_complex_claim_as_a_list(Config) ->
     {_Algo, Token} = generate_valid_token_with_extra_fields(
         Config,
-        #{<<"additional_rabbitmq_scopes">> => [<<"rabbitmq.configure:*/*">>, <<"rabbitmq.read:*/*">>, <<"rabbitmq.write:*/*">>]}
+        #{<<"extra_scopes_source">> => [<<"rabbitmq.configure:*/*">>, <<"rabbitmq.read:*/*">>, <<"rabbitmq.write:*/*">>]}
     ),
     Conn     = open_unmanaged_connection(Config, 0, <<"username">>, Token),
     {ok, Ch} = amqp_connection:open_channel(Conn),
@@ -322,7 +322,7 @@ test_successful_connection_with_complex_claim_as_a_list(Config) ->
 test_successful_connection_with_complex_claim_as_a_binary(Config) ->
     {_Algo, Token} = generate_valid_token_with_extra_fields(
         Config,
-        #{<<"additional_rabbitmq_scopes">> => <<"rabbitmq.configure:*/* rabbitmq.read:*/*" "rabbitmq.write:*/*">>}
+        #{<<"extra_scopes_source">> => <<"rabbitmq.configure:*/* rabbitmq.read:*/*" "rabbitmq.write:*/*">>}
     ),
     Conn     = open_unmanaged_connection(Config, 0, <<"username">>, Token),
     {ok, Ch} = amqp_connection:open_channel(Conn),

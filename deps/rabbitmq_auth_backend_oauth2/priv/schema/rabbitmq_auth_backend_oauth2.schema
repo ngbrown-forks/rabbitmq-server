@@ -21,7 +21,7 @@
 
 %% Configure the plugin to also look in other fields using additional_scopes_key (maps to extra_scopes_source in the old format)
 %%
-%% {additional_rabbitmq_scopes, <<"my_custom_scope_key">>},
+%% {extra_scopes_source, <<"my_custom_scope_key">>},
 
 {mapping,
  "auth_oauth2.additional_scopes_key",
